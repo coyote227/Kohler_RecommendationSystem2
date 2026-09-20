@@ -58,7 +58,7 @@ export const KOHLER_THEMES: Record<string, ThemeConfig> = {
     lightingType: 'Smart Tunable White LED Ambient Perimeter',
     ambientLightColor: '#edf2f7',
     accentLightColor: '#cbd5e1',
-    previewImage: '/images/vanity/kresla_vanity_36.jpg',
+    previewImage: 'https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?auto=format&fit=crop&w=900&q=85',
     designNotes: 'Contrasting textures, smart toilet integration, touchless sensors, intuitive digital controls.'
   }
 };
