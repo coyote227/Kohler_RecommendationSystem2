@@ -10,7 +10,7 @@ interface KohlerProductImageProps {
 }
 
 export const KohlerProductImage: React.FC<KohlerProductImageProps> = ({
-  src,
+  src: _src,
   alt,
   sku,
   category,

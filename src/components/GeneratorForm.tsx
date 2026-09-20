@@ -1,7 +1,7 @@
 import React from 'react';
 import { SpaceDetails, DesignTheme, BudgetRange } from '../types';
 import { KOHLER_THEMES, BUDGET_TIERS } from '../data/kohlerCatalogue';
-import { ArrowRight, Sparkles, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, CheckCircle2 } from 'lucide-react';
 import { SafeImage } from './SafeImage';
 
 interface GeneratorFormProps {

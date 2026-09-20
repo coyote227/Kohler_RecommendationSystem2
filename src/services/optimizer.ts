@@ -7,7 +7,7 @@ import {
   SpaceFitReport, 
   DesignPlan 
 } from '../types';
-import { KOHLER_CATALOGUE, KOHLER_THEMES, BUDGET_TIERS } from '../data/kohlerCatalogue';
+import { KOHLER_CATALOGUE, KOHLER_THEMES } from '../data/kohlerCatalogue';
 
 interface OptimizationParams {
   space: SpaceDetails;

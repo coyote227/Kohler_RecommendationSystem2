@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { DesignPlan, KohlerProduct } from '../types';
-import { Download, RefreshCw, ChevronRight, Layers, ArrowUpRight, Box } from 'lucide-react';
+import { Download, RefreshCw, Layers, Box } from 'lucide-react';
 import { KohlerProductImage } from './KohlerProductImage';
+import { getProductSVG } from '../utils/productSVGs';
 import { BathroomViewer3D } from './BathroomViewer3D';
 
 interface DesignOverviewProps {
@@ -15,7 +16,7 @@ export const DesignOverview: React.FC<DesignOverviewProps> = ({
   onSelectProduct,
   onOpen3DView
 }) => {
-  const { products, space, theme, totalCost, remainingBudget } = plan;
+  const { products, space, theme, totalCost } = plan;
   const [is2DView, setIs2DView] = useState(false);
 
   const productList: KohlerProduct[] = [
@@ -28,6 +29,47 @@ export const DesignOverview: React.FC<DesignOverviewProps> = ({
     ...(products.bathtub ? [products.bathtub] : []),
     ...products.accessories
   ];
+
+  const downloadProductCostList = () => {
+    const escapeHtml = (value: string) => value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+    const productRows = productList.map(product => `
+      <article class="product">
+        <img src="${getProductSVG(product.sku, product.category)}" alt="${escapeHtml(product.name)}" />
+        <div class="details">
+          <div class="code">${escapeHtml(product.sku)} · ${escapeHtml(product.category.replace('_', ' '))}</div>
+          <h2>${escapeHtml(product.name)}</h2>
+          <div class="cost">$${product.price.toLocaleString()} USD</div>
+        </div>
+      </article>
+    `).join('');
+    const printWindow = window.open('', '_blank', 'noopener,noreferrer,width=900,height=700');
+    if (!printWindow) return;
+    printWindow.document.write(`<!doctype html><html><head><title>KOHLER Products and Costs</title><style>
+      @page { size: A4; margin: 16mm; }
+      * { box-sizing: border-box; }
+      body { margin: 0; color: #171717; font-family: Arial, sans-serif; }
+      header { display: flex; justify-content: space-between; align-items: end; border-bottom: 2px solid #171717; padding-bottom: 12px; margin-bottom: 18px; }
+      h1 { margin: 0; font-size: 22px; letter-spacing: 1px; }
+      header span { color: #777; font-size: 11px; }
+      .product { display: flex; gap: 18px; align-items: center; min-height: 118px; border-bottom: 1px solid #ddd; padding: 12px 0; break-inside: avoid; }
+      .product img { width: 100px; height: 100px; object-fit: contain; background: #f7f7f7; border: 1px solid #e4e4e4; }
+      .details { flex: 1; }
+      .code { color: #777; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; }
+      h2 { margin: 7px 0; font-size: 14px; }
+      .cost { font-weight: 700; font-size: 15px; }
+      footer { display: flex; justify-content: flex-end; gap: 24px; padding-top: 18px; font-weight: 700; font-size: 16px; }
+    </style></head><body>
+      <header><h1>KOHLER PRODUCTS</h1><span>Selected products and costs</span></header>
+      ${productRows}
+      <footer><span>Total</span><span>$${totalCost.toLocaleString()} USD</span></footer>
+      <script>window.onload = () => { window.focus(); window.print(); };</script>
+    </body></html>`);
+    printWindow.document.close();
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -194,11 +236,11 @@ export const DesignOverview: React.FC<DesignOverviewProps> = ({
                 View in Interactive 3D Studio
               </button>
               <button
-                onClick={() => window.print()}
+                onClick={downloadProductCostList}
                 className="w-full py-3 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 text-xs font-medium rounded-xl transition flex items-center justify-center space-x-1.5"
               >
                 <Download className="w-3.5 h-3.5" />
-                <span>Download Design Specs (PDF)</span>
+                <span>Download Product PDF</span>
               </button>
             </div>
           </div>

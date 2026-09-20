@@ -1,5 +1,3 @@
-import React from 'react';
-
 /**
  * Returns a high-resolution crisp SVG vector graphic for each authentic KOHLER product.
  * These guarantee 100% reliable image display without external 403 HTTP blockages or broken images.

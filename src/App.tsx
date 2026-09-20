@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { SpaceDetails, DesignTheme, BudgetRange, DesignPlan, KohlerProduct } from './types';
-import { BUDGET_TIERS, KOHLER_THEMES } from './data/kohlerCatalogue';
+import { BUDGET_TIERS } from './data/kohlerCatalogue';
 import { optimizeBathroomDesign } from './services/optimizer';
 import { GeneratorForm } from './components/GeneratorForm';
 import { DesignOverview } from './components/DesignOverview';
 import { CatalogueRecommendations } from './components/CatalogueRecommendations';
 import { DarkRoomConfigurator } from './components/DarkRoomConfigurator';
 import { ProductReplacementModal } from './components/ProductReplacementModal';
-import { Sparkles, ShieldCheck, Box, Compass, RefreshCw } from 'lucide-react';
+import { Sparkles, ShieldCheck, Box, Compass } from 'lucide-react';
 
 export function App() {
   // Navigation & View State
@@ -50,7 +50,7 @@ export function App() {
   };
 
   // Update Plan parameters in 3D Configurator
-  const handleUpdatePlanParams = (newSpace: SpaceDetails, newBudget: BudgetRange, newTheme: DesignTheme, includeBathtub = false) => {
+  const handleUpdatePlanParams = (newSpace: SpaceDetails, newBudget: BudgetRange, newTheme: DesignTheme) => {
     setSpace(newSpace);
     setBudget(newBudget);
     setTheme(newTheme);

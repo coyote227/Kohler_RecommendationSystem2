@@ -40,7 +40,7 @@ export const BathroomViewer3D: React.FC<ViewerProps> = ({
     cameraRef.current = camera;
 
     // Lighting
-    const ambientLight = new THREE.AmbientLight(plan.theme.ambientLightColor, 1.1);
+    const ambientLight = new THREE.AmbientLight('#fff4e6', 1.1);
     scene.add(ambientLight);
     ambientLightRef.current = ambientLight;
     const hemisphereLight = new THREE.HemisphereLight('#fff8ed', '#24201c', 1.2);
@@ -50,7 +50,7 @@ export const BathroomViewer3D: React.FC<ViewerProps> = ({
     directionalLight.castShadow = true;
     directionalLight.shadow.mapSize.set(2048, 2048);
     scene.add(directionalLight);
-    const ceilingLight = new THREE.PointLight(plan.theme.accentLightColor, 7, 10, 2);
+    const ceilingLight = new THREE.PointLight('#ffd6a0', 7, 10, 2);
     ceilingLight.position.set(0, 3.2, 0.5);
     ceilingLight.castShadow = true;
     scene.add(ceilingLight);
