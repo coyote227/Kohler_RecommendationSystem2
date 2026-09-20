@@ -141,12 +141,12 @@ export const GeneratorForm: React.FC<GeneratorFormProps> = ({
                     </div>
                   )}
                 </div>
-                <div className="p-3 text-left">
+                <div className="p-3 text-left min-h-[52px] flex items-center">
                   <div className="flex items-center space-x-2">
-                    <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${isSelected ? 'border-black' : 'border-neutral-300'}`}>
+                    <div className={`w-4 h-4 shrink-0 rounded-full border flex items-center justify-center ${isSelected ? 'border-black' : 'border-neutral-300'}`}>
                       {isSelected && <div className="w-2 h-2 rounded-full bg-black" />}
                     </div>
-                    <span className="text-xs font-semibold text-neutral-900 truncate">
+                    <span className="text-sm leading-5 font-semibold text-neutral-900">
                       {t.name}
                     </span>
                   </div>

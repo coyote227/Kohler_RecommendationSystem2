@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { getProductSVG } from '../utils/productSVGs';
 
 interface KohlerProductImageProps {
@@ -16,15 +16,13 @@ export const KohlerProductImage: React.FC<KohlerProductImageProps> = ({
   category,
   className = "max-h-full max-w-full object-contain"
 }) => {
-  const [hasError, setHasError] = useState(false);
   const fallbackSvg = getProductSVG(sku, category);
 
-  // If the remote image throws 403 or fails to load, seamlessly display the crisp Kohler product vector illustration
+  // Use the local illustration so blocked external catalogue hosts cannot create failed requests.
   return (
     <img
-      src={hasError ? fallbackSvg : src}
+      src={fallbackSvg}
       alt={alt}
-      onError={() => setHasError(true)}
       className={className}
       loading="lazy"
     />

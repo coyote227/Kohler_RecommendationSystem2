@@ -272,17 +272,18 @@ export class Kohler3DModelFactory {
       new THREE.BoxGeometry(0.01, 2.1, 0.95),
       glassMat
     );
-    glassPanel.position.set(0.5, 1.05, 0.45);
+    // Keep the enclosure inside the room and parallel to the side wall.
+    glassPanel.position.set(-0.42, 1.05, 0.28);
     glassPanel.castShadow = true;
     group.add(glassPanel);
 
     // Matte Black / Chrome Glass Clamps
     const clampGeo = new THREE.BoxGeometry(0.03, 0.06, 0.04);
     const clamp1 = new THREE.Mesh(clampGeo, metalMat);
-    clamp1.position.set(0.5, 0.1, 0.45);
+    clamp1.position.set(-0.42, 0.1, 0.28);
     group.add(clamp1);
     const clamp2 = new THREE.Mesh(clampGeo, metalMat);
-    clamp2.position.set(0.5, 2.0, 0.45);
+    clamp2.position.set(-0.42, 2.0, 0.28);
     group.add(clamp2);
 
     return group;

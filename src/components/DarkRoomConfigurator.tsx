@@ -20,7 +20,7 @@ import {
 
 interface DarkRoomConfiguratorProps {
   plan: DesignPlan;
-  onUpdatePlanParams: (space: SpaceDetails, budget: BudgetRange, theme: DesignTheme) => void;
+  onUpdatePlanParams: (space: SpaceDetails, budget: BudgetRange, theme: DesignTheme, includeBathtub?: boolean) => void;
   onSelectProductForReplacement: (product: KohlerProduct) => void;
   onBackToOverview: () => void;
 }
@@ -35,6 +35,7 @@ export const DarkRoomConfigurator: React.FC<DarkRoomConfiguratorProps> = ({
   const [space, setSpace] = useState<SpaceDetails>(plan.space);
   const [budget, setBudget] = useState<BudgetRange>(plan.budget);
   const [theme, setTheme] = useState<DesignTheme>(plan.theme.id as DesignTheme);
+  const [tilePattern, setTilePattern] = useState(plan.theme.tilePattern);
 
   // Collapsible state for the bottom featured assets panel (User Request)
   const [isAssetsPanelOpen, setIsAssetsPanelOpen] = useState(true);
@@ -53,6 +54,16 @@ export const DarkRoomConfigurator: React.FC<DarkRoomConfiguratorProps> = ({
     ...plan.products.accessories
   ];
 
+  const getRenderedRole = (product: KohlerProduct) => {
+    if (product.category === 'tile') return 'Tile surface';
+    if (product.category === 'shower') return 'Walk-in shower + glass';
+    if (product.category === 'bathtub') return 'Freestanding bathtub';
+    if (product.id === 'KOH_ACC_002') return 'Planter beside toilet';
+    if (product.id === 'KOH_ACC_001') return 'Bath mat by vanity';
+    if (product.id === 'KOH_ACC_003') return 'Illuminated wall niche';
+    return product.category.replace('_', ' ');
+  };
+
   const handleApplyChanges = () => {
     onUpdatePlanParams(space, budget, theme);
   };
@@ -64,6 +75,7 @@ export const DarkRoomConfigurator: React.FC<DarkRoomConfiguratorProps> = ({
         <BathroomViewer3D
           plan={plan}
           is2DView={is2DView}
+          tilePattern={tilePattern}
           onSelectProduct={onSelectProductForReplacement}
         />
       </div>
@@ -84,8 +96,6 @@ export const DarkRoomConfigurator: React.FC<DarkRoomConfiguratorProps> = ({
           <nav className="hidden md:flex items-center space-x-6 text-xs text-white/70">
             <button className="text-white border-b-2 border-white pb-1 font-medium">Design Studio</button>
             <button onClick={onBackToOverview} className="hover:text-white transition">Product Specs</button>
-            <button className="hover:text-white transition">Inspiration</button>
-            <button className="hover:text-white transition">About</button>
           </nav>
         </div>
 
@@ -104,7 +114,7 @@ export const DarkRoomConfigurator: React.FC<DarkRoomConfiguratorProps> = ({
       </header>
 
       {/* 3. Floating Left HUD: Space, Budget & Theme Customizer (Collapsible) */}
-      <div className="absolute top-20 left-6 z-20 w-80 max-w-[calc(100vw-3rem)] pointer-events-auto transition-all duration-300">
+      <div className="absolute top-20 left-6 z-20 w-96 max-w-[calc(100vw-3rem)] pointer-events-auto transition-all duration-300">
         <div className="dark-glass-panel rounded-2xl p-4 shadow-2xl space-y-4 max-h-[calc(100vh-14rem)] overflow-y-auto">
           <div className="flex items-center justify-between pb-2 border-b border-white/10">
             <div className="flex items-center space-x-2 text-xs font-semibold uppercase tracking-wider text-white">
@@ -183,11 +193,30 @@ export const DarkRoomConfigurator: React.FC<DarkRoomConfiguratorProps> = ({
                     const b = BUDGET_TIERS.find(tier => tier.id === e.target.value);
                     if (b) setBudget(b);
                   }}
-                  className="w-full bg-white/5 border border-white/15 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-white cursor-pointer"
+                  className="w-full bg-white/5 border border-white/15 rounded-xl px-3 py-3 text-sm text-white focus:outline-none focus:border-white cursor-pointer"
                 >
                   {BUDGET_TIERS.map(b => (
                     <option key={b.id} value={b.id} className="bg-[#1c1d20] text-white">{b.label}</option>
                   ))}
+                </select>
+              </div>
+
+              <div className="pt-3 border-t border-white/10">
+                <div className="flex items-center space-x-2 text-white/90 text-xs font-semibold uppercase tracking-wider mb-2.5">
+                  <span className="w-4 h-4 rounded-full border border-white/40 flex items-center justify-center text-[9px]">5</span>
+                  <span>Tile Scale & Pattern</span>
+                </div>
+                <select
+                  value={tilePattern}
+                  onChange={(event) => setTilePattern(event.target.value)}
+                  className="w-full bg-white/5 border border-white/15 rounded-xl px-3 py-3 text-sm text-white focus:outline-none focus:border-white cursor-pointer"
+                >
+                  <option value="Large Format Horizontal Grid" className="bg-[#1c1d20] text-white">Large format 600 × 1200 mm</option>
+                  <option value="Monolithic Seamless Large Slab" className="bg-[#1c1d20] text-white">Large slab 1200 × 2400 mm</option>
+                  <option value="Veined Marble Herringbone & Subway" className="bg-[#1c1d20] text-white">Herringbone 300 × 600 mm</option>
+                  <option value="Fluted / Staggered Vertical Stack" className="bg-[#1c1d20] text-white">Staggered 300 × 600 mm</option>
+                  <option value="Hex Mosaic" className="bg-[#1c1d20] text-white">Hex mosaic 200 mm</option>
+                  <option value="Terrazzo Small Format" className="bg-[#1c1d20] text-white">Terrazzo 400 × 400 mm</option>
                 </select>
               </div>
 
@@ -214,19 +243,29 @@ export const DarkRoomConfigurator: React.FC<DarkRoomConfiguratorProps> = ({
                           src={t.previewImage}
                           alt={t.name}
                           fallbackText={t.name}
-                          className="w-full h-12 object-cover rounded-lg"
+                          className="w-full h-16 object-cover rounded-lg"
                         />
-                        <p className="text-[10px] font-medium text-white/90 mt-1 truncate px-1">{t.name}</p>
+                        <p className="text-xs font-medium text-white/90 mt-1 truncate px-1">{t.name}</p>
                       </div>
                     );
                   })}
                 </div>
               </div>
 
+              <div className="pt-3 border-t border-white/10">
+                <div className="flex items-center space-x-2 text-white/90 text-xs font-semibold uppercase tracking-wider mb-2.5">
+                  <span className="w-4 h-4 rounded-full border border-white/40 flex items-center justify-center text-[9px]">4</span>
+                  <span>Bathing Package</span>
+                </div>
+                <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-3 text-sm text-white/70">
+                  {budget.max >= 10000 ? 'Walk-in shower + freestanding bathtub' : 'Walk-in shower'}
+                </div>
+              </div>
+
               {/* Re-generate CTA */}
               <button
                 onClick={handleApplyChanges}
-                className="w-full py-2.5 px-4 bg-white text-black hover:bg-neutral-200 font-semibold text-xs rounded-xl shadow-lg transition flex items-center justify-center space-x-2 active:scale-95"
+                className="w-full py-3 px-4 bg-white text-black hover:bg-neutral-200 font-semibold text-sm rounded-xl shadow-lg transition flex items-center justify-center space-x-2 active:scale-95"
               >
                 <span>Generate Design</span>
                 <ChevronRight className="w-3.5 h-3.5" />
@@ -331,7 +370,7 @@ export const DarkRoomConfigurator: React.FC<DarkRoomConfiguratorProps> = ({
               <div
                 key={prod.id}
                 onClick={() => onSelectProductForReplacement(prod)}
-                className="dark-glass-card hover:border-white/40 cursor-pointer rounded-2xl p-3 flex-shrink-0 w-48 transition-all group relative shadow-lg"
+                className="dark-glass-card hover:border-white/40 cursor-pointer rounded-2xl p-4 flex-shrink-0 w-56 transition-all group relative shadow-lg"
               >
                 <div className="w-full h-20 bg-white rounded-xl p-1.5 mb-2 flex items-center justify-center overflow-hidden border border-neutral-100">
                   <KohlerProductImage
@@ -342,12 +381,15 @@ export const DarkRoomConfigurator: React.FC<DarkRoomConfiguratorProps> = ({
                     className="max-h-full max-w-full object-contain group-hover:scale-110 transition-transform duration-300"
                   />
                 </div>
-                <span className="text-[10px] text-white/40 font-mono uppercase block truncate">
-                  {prod.sku}
+                <span className="text-[10px] text-[#c89d6c] font-semibold uppercase block truncate">
+                  {getRenderedRole(prod)}
                 </span>
-                <h4 className="text-xs font-medium text-white truncate group-hover:text-[#c89d6c] transition-colors">
+                <h4 className="text-xs font-medium text-white truncate group-hover:text-[#c89d6c] transition-colors" title={prod.name}>
                   {prod.name}
                 </h4>
+                <span className="text-[10px] text-white/40 font-mono uppercase block truncate">
+                  {prod.sku} · catalogue reference
+                </span>
                 <div className="flex items-center justify-between mt-1 pt-1 border-t border-white/5">
                   <span className="text-xs font-bold text-white/90">
                     ${prod.price.toLocaleString()}

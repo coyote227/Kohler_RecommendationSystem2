@@ -4,15 +4,15 @@ import { BUDGET_TIERS, KOHLER_THEMES } from './data/kohlerCatalogue';
 import { optimizeBathroomDesign } from './services/optimizer';
 import { GeneratorForm } from './components/GeneratorForm';
 import { DesignOverview } from './components/DesignOverview';
+import { CatalogueRecommendations } from './components/CatalogueRecommendations';
 import { DarkRoomConfigurator } from './components/DarkRoomConfigurator';
 import { ProductReplacementModal } from './components/ProductReplacementModal';
 import { Sparkles, ShieldCheck, Box, Compass, RefreshCw } from 'lucide-react';
-import confetti from 'canvas-confetti';
 
 export function App() {
   // Navigation & View State
   // 'landing' | 'overview' | 'configurator3d'
-  const [currentView, setCurrentView] = useState<'landing' | 'overview' | 'configurator3d'>('landing');
+  const [currentView, setCurrentView] = useState<'landing' | 'overview' | 'catalogue' | 'configurator3d'>('landing');
 
   // User input states (pre-populated with realistic Japanese Zen specs matching reference)
   const [space, setSpace] = useState<SpaceDetails>({
@@ -42,21 +42,15 @@ export function App() {
     const newPlan = optimizeBathroomDesign({
       space,
       budget,
-      theme
+      theme,
+      includeBathtub: budget.max >= 10000
     });
     setDesignPlan(newPlan);
     setCurrentView('configurator3d');
-
-    // Subtle celebration feedback
-    confetti({
-      particleCount: 50,
-      spread: 60,
-      origin: { y: 0.7 }
-    });
   };
 
   // Update Plan parameters in 3D Configurator
-  const handleUpdatePlanParams = (newSpace: SpaceDetails, newBudget: BudgetRange, newTheme: DesignTheme) => {
+  const handleUpdatePlanParams = (newSpace: SpaceDetails, newBudget: BudgetRange, newTheme: DesignTheme, includeBathtub = false) => {
     setSpace(newSpace);
     setBudget(newBudget);
     setTheme(newTheme);
@@ -64,7 +58,8 @@ export function App() {
     const updated = optimizeBathroomDesign({
       space: newSpace,
       budget: newBudget,
-      theme: newTheme
+      theme: newTheme,
+      includeBathtub: newBudget.max >= 10000
     });
     setDesignPlan(updated);
   };
@@ -149,8 +144,12 @@ export function App() {
                   >
                     Specification & Products
                   </button>
-                  <span className="text-neutral-400 hover:text-black cursor-pointer">Inspiration</span>
-                  <span className="text-neutral-400 hover:text-black cursor-pointer">About</span>
+                  <button
+                    onClick={() => setCurrentView('catalogue')}
+                    className={`pb-1 ${currentView === 'catalogue' ? 'text-black border-b-2 border-black' : 'hover:text-black'}`}
+                  >
+                    Recommendations
+                  </button>
                 </nav>
               </div>
 
@@ -167,7 +166,12 @@ export function App() {
                 {currentView === 'landing' && (
                   <button
                     onClick={() => {
-                      const newPlan = optimizeBathroomDesign({ space, budget, theme });
+                      const newPlan = optimizeBathroomDesign({
+                        space,
+                        budget,
+                        theme,
+                        includeBathtub: budget.max >= 10000
+                      });
                       setDesignPlan(newPlan);
                       setCurrentView('configurator3d');
                     }}
@@ -270,7 +274,7 @@ export function App() {
                 </div>
               </div>
             </main>
-          ) : (
+          ) : currentView === 'overview' ? (
             <main className="flex-1">
               <DesignOverview
                 plan={designPlan}
@@ -281,6 +285,13 @@ export function App() {
                 onOpen3DView={() => setCurrentView('configurator3d')}
               />
             </main>
+          ) : (
+            <CatalogueRecommendations
+              onSelectProduct={(prod) => {
+                setReplacingProduct(prod);
+                setIsModalOpen(true);
+              }}
+            />
           )}
         </div>
       )}
