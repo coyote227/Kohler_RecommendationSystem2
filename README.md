@@ -2,8 +2,6 @@
 
 This conceptual prototype explores bathroom recommendations, catalogue browsing, and interactive 3D planning.
 
-It is not an official KOHLER purchasing, construction, CAD, or engineering system.
-
 ## Project Materials
 
 - `prompts/`: AI prompts and project prompt history.
