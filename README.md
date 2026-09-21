@@ -22,6 +22,14 @@ This conceptual prototype explores bathroom recommendations, catalogue browsing,
 
 Requirements: Node.js 18 or newer.
 
+To enable OpenRouter-powered assistant responses, add your key to `.env`:
+
+```env
+OPENROUTER_API_KEY=your_openrouter_key_here
+```
+
+`.env` is ignored by Git. You can use `.env.example` as the starting template. Without a valid key, the app displays an OpenRouter connection/configuration error rather than a fallback recommendation.
+
 ```bash
 npm install
 npm run dev

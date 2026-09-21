@@ -7,6 +7,7 @@ import { DesignOverview } from './components/DesignOverview';
 import { CatalogueRecommendations } from './components/CatalogueRecommendations';
 import { DarkRoomConfigurator } from './components/DarkRoomConfigurator';
 import { ProductReplacementModal } from './components/ProductReplacementModal';
+import { AIAssistantPanel } from './components/AIAssistantPanel';
 import { Sparkles, ShieldCheck, Box, Compass } from 'lucide-react';
 
 export function App() {
@@ -36,32 +37,59 @@ export function App() {
   // Modal State for Product Customization / Replacement
   const [replacingProduct, setReplacingProduct] = useState<KohlerProduct | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generationError, setGenerationError] = useState<string | null>(null);
 
-  // Generate Handler
-  const handleGenerate = () => {
-    const newPlan = optimizeBathroomDesign({
-      space,
-      budget,
-      theme,
-      includeBathtub: budget.max >= 10000
-    });
-    setDesignPlan(newPlan);
-    setCurrentView('configurator3d');
+  const requestDesignPlan = async (
+    requestedSpace: SpaceDetails,
+    requestedBudget: BudgetRange,
+    requestedTheme: DesignTheme,
+    destination: 'overview' | 'configurator3d' = 'configurator3d'
+  ) => {
+    setIsGenerating(true);
+    setGenerationError(null);
+
+    try {
+      const response = await fetch('/api/recommendations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          space: requestedSpace,
+          budget: requestedBudget.max,
+          theme: requestedTheme,
+          includeBathtub: requestedBudget.max >= 10000
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null) as { error?: string } | null;
+        throw new Error(errorData?.error || `Recommendation API returned ${response.status}`);
+      }
+
+      const data = await response.json() as { plan?: DesignPlan };
+      if (!data.plan) {
+        throw new Error('Recommendation API did not return a design plan');
+      }
+
+      setDesignPlan(data.plan);
+      setCurrentView(destination);
+    } catch (error) {
+      console.error('Design recommendation request failed:', error);
+      setGenerationError(error instanceof Error ? error.message : 'Unable to connect to the recommendation API.');
+    } finally {
+      setIsGenerating(false);
+    }
   };
+
+  // Generate Handler: the backend is the source of truth for generated plans.
+  const handleGenerate = () => requestDesignPlan(space, budget, theme);
 
   // Update Plan parameters in 3D Configurator
   const handleUpdatePlanParams = (newSpace: SpaceDetails, newBudget: BudgetRange, newTheme: DesignTheme) => {
     setSpace(newSpace);
     setBudget(newBudget);
     setTheme(newTheme);
-
-    const updated = optimizeBathroomDesign({
-      space: newSpace,
-      budget: newBudget,
-      theme: newTheme,
-      includeBathtub: newBudget.max >= 10000
-    });
-    setDesignPlan(updated);
+    void requestDesignPlan(newSpace, newBudget, newTheme, 'configurator3d');
   };
 
   // Individual Product Replacement
@@ -165,19 +193,11 @@ export function App() {
                 )}
                 {currentView === 'landing' && (
                   <button
-                    onClick={() => {
-                      const newPlan = optimizeBathroomDesign({
-                        space,
-                        budget,
-                        theme,
-                        includeBathtub: budget.max >= 10000
-                      });
-                      setDesignPlan(newPlan);
-                      setCurrentView('configurator3d');
-                    }}
-                    className="px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-900 text-xs font-medium rounded-xl transition"
+                    onClick={() => void requestDesignPlan(space, budget, theme)}
+                    disabled={isGenerating}
+                    className="px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-900 text-xs font-medium rounded-xl transition disabled:opacity-60"
                   >
-                    Quick Launch 3D
+                    {isGenerating ? 'Generating…' : 'Quick Launch 3D'}
                   </button>
                 )}
               </div>
@@ -234,15 +254,28 @@ export function App() {
 
                   {/* Right Column: Interactive Generator Form (Matching Reference Image 1) */}
                   <div className="lg:col-span-6 flex justify-center lg:justify-end">
-                    <GeneratorForm
-                      space={space}
-                      setSpace={setSpace}
-                      theme={theme}
-                      setTheme={setTheme}
-                      budget={budget}
-                      setBudget={setBudget}
-                      onGenerate={handleGenerate}
-                    />
+                    <div className="w-full max-w-xl space-y-6">
+                      <GeneratorForm
+                        space={space}
+                        setSpace={setSpace}
+                        theme={theme}
+                        setTheme={setTheme}
+                        budget={budget}
+                        setBudget={setBudget}
+                        onGenerate={handleGenerate}
+                        isLoading={isGenerating}
+                      />
+                      {generationError && (
+                        <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 border border-red-200">
+                          {generationError}
+                        </p>
+                      )}
+                      <AIAssistantPanel
+                        space={space}
+                        theme={theme}
+                        budget={budget}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
