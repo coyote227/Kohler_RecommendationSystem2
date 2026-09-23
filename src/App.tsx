@@ -57,7 +57,10 @@ export function App() {
           space: requestedSpace,
           budget: requestedBudget.max,
           theme: requestedTheme,
-          includeBathtub: requestedBudget.max >= 10000
+          includeBathtub: requestedBudget.max >= 10000,
+          // The design plan is calculated by the API. The visible AI response is
+          // requested separately by AIAssistantPanel, where it can be displayed.
+          includeAssistant: false
         })
       });
 

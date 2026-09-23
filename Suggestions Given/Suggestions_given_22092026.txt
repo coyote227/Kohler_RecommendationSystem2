@@ -1,0 +1,24 @@
+- working on specifications of the tiles 
+- integrating a user facing llm
+- including blueprint in the design 
+- login and user visualisation 
+- using actual dataset - with scanned option
+- a good theme based recommendation system working in the backend
+- multiple systems working in sequence
+- remove the budget 
+- make sure to keep audience in mind
+- texture and feel and look focused
+
+                 --------- one flow ---------
+- taking user input (- interaction - storing those) 
+- using those as input for the recommendation system
+- taking those inputs and generating a catalogue 
+- rendering that as an actual bathroom
+- being able to interact with that bathroom 
+
+
+            ------------- second flow -------------
+- take all the user inputs 
+- generate a modifiable 3d room 
+- allow people to put these in basket and buy directly
+- also visit catalogue

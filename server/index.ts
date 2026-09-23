@@ -9,9 +9,10 @@ const app = express();
 const port = Number(process.env.PORT || 3001);
 const openRouterApiKey = process.env.OPENROUTER_API_KEY;
 const openRouterModel = process.env.OPENROUTER_MODEL || 'openai/gpt-4o-mini';
-const appUrl = process.env.APP_URL || 'http://localhost:5173';
+const appUrl = process.env.APP_URL || 'http://localhost:5137';
 const appTitle = process.env.OPENROUTER_APP_TITLE || 'KOHLER AI Bathroom Designer';
 const openRouterCompletionUrl = 'https://openrouter.ai/api/v1/chat/completions';
+const openRouterTimeoutMs = 30_000;
 
 app.use(cors());
 app.use(express.json());
@@ -26,6 +27,12 @@ const parseBudget = (budget: number | undefined): BudgetRange => {
     if (tier) return tier;
   }
   return BUDGET_TIERS[1];
+};
+
+const parseDimension = (value: unknown, fallback: number, min: number, max: number): number => {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.min(max, Math.max(min, parsed));
 };
 
 const calculateMatchScore = (product: KohlerProduct, theme: DesignTheme, budgetMax: number, space: SpaceDetails) => {
@@ -56,6 +63,7 @@ const buildOpenRouterAssistantSummary = async (
   try {
     const response = await fetch(openRouterCompletionUrl, {
       method: 'POST',
+      signal: AbortSignal.timeout(openRouterTimeoutMs),
       headers: {
         Authorization: `Bearer ${openRouterApiKey}`,
         'Content-Type': 'application/json',
@@ -68,7 +76,23 @@ const buildOpenRouterAssistantSummary = async (
         messages: [
           {
             role: 'system',
-            content: 'You are a luxury bathroom design assistant. Keep the answer concise, polished, and practical. Mention the room dimensions, theme, budget, and recommended fixtures.'
+            content: `You are a luxury bathroom design assistant. Keep the answer concise, polished, and practical. Use this exact Markdown structure, with each item on its own line:
+## Bathroom Design Recommendation
+**Dimensions:** ...
+**Theme:** ...
+**Budget:** ...
+### Layout
+- **Vanity area:** ...
+- **Toilet area:** ...
+- **Shower area:** ...
+### Recommended fixtures
+1. **Vanity:** ...
+2. **Toilet:** ...
+3. **Shower:** ...
+### Additional touches
+- ...
+- ...
+Do not use a preamble or closing sentence.`
           },
           {
             role: 'user',
@@ -79,7 +103,9 @@ const buildOpenRouterAssistantSummary = async (
     });
 
     if (!response.ok) {
-      throw new Error(`OpenRouter request failed (${response.status}). Check the API key, model, and account credits.`);
+      const errorBody = await response.json().catch(() => null) as { error?: { message?: string } } | null;
+      const detail = errorBody?.error?.message;
+      throw new Error(`OpenRouter request failed (${response.status})${detail ? `: ${detail}` : '. Check the API key, model, and account credits.'}`);
     }
 
     const data = await response.json() as {
@@ -94,29 +120,37 @@ const buildOpenRouterAssistantSummary = async (
     return summary;
   } catch (error) {
     console.error('OpenRouter request failed:', error);
+    if (error instanceof Error && error.name === 'TimeoutError') {
+      throw new Error(`OpenRouter did not respond within ${openRouterTimeoutMs / 1000} seconds. Try again or choose a model with available capacity.`);
+    }
     throw error;
   }
 };
 
 app.get('/api/health', (_req, res) => {
-  res.json({ ok: true, service: 'kohler-ai-assistant', timestamp: new Date().toISOString() });
+  res.json({
+    ok: true,
+    service: 'kohler-ai-assistant',
+    openRouterConfigured: Boolean(openRouterApiKey),
+    model: openRouterApiKey ? openRouterModel : undefined,
+    timestamp: new Date().toISOString()
+  });
 });
 
 app.post('/api/recommendations', async (req, res) => {
   try {
-    if (!openRouterApiKey) {
+    const { space, budget, theme, preferences, includeBathtub, includeAssistant = true } = req.body ?? {};
+    if (includeAssistant !== false && !openRouterApiKey) {
       res.status(503).json({
         ok: false,
         error: 'Unable to connect to OpenRouter: OPENROUTER_API_KEY is missing from .env.'
       });
       return;
     }
-
-    const { space, budget, theme, preferences, includeBathtub } = req.body ?? {};
     const cleanedSpace: SpaceDetails = {
-      length: Number(space?.length ?? 3),
-      width: Number(space?.width ?? 2),
-      height: Number(space?.height ?? 2.5),
+      length: parseDimension(space?.length, 3, 1.5, 10),
+      width: parseDimension(space?.width, 2, 1.2, 8),
+      height: parseDimension(space?.height, 2.5, 2, 4),
       unit: space?.unit === 'ft' ? 'ft' : 'm'
     };
     const cleanedBudget = parseBudget(Number(budget ?? 7000));
@@ -139,28 +173,25 @@ app.post('/api/recommendations', async (req, res) => {
       matchScore: calculateMatchScore(product, cleanedTheme, cleanedBudget.max, cleanedSpace)
     })).sort((a, b) => b.matchScore - a.matchScore);
 
-    const assistantSummary = await buildOpenRouterAssistantSummary(
-      cleanedSpace,
-      cleanedBudget,
-      cleanedTheme,
-      String(preferences ?? ''),
-      plan
-    );
+    const assistantSummary = includeAssistant === false
+      ? null
+      : await buildOpenRouterAssistantSummary(
+        cleanedSpace,
+        cleanedBudget,
+        cleanedTheme,
+        String(preferences ?? ''),
+        plan
+      );
 
     res.json({
       ok: true,
       plan,
       recommendations: productMatches,
-      assistant: {
+      assistant: assistantSummary ? {
         summary: assistantSummary,
         provider: 'OpenRouter',
-        model: openRouterModel,
-        suggestions: [
-          'Prioritize a floating vanity to create visual space.',
-          'Use a warm LED halo for a softer Japanese Zen mood.',
-          'Keep the shower glass clear to maximize light and openness.'
-        ]
-      }
+        model: openRouterModel
+      } : null
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
